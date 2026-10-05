@@ -35,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchMe() {
     const { data } = await api.get('/customer/me')
-    person.value = data.person
+    person.value = data
   }
 
   /** @param {{ name, email, phone, id_card_number }} payload */

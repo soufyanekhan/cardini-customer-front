@@ -23,7 +23,8 @@ async function submit() {
   fields.value = {}
   try {
     await auth.login({ login: form.login.trim(), password: form.password })
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/profil'
+    const redirect =
+      typeof route.query.redirect === 'string' ? route.query.redirect : '/tableau-de-bord'
     await router.push(redirect)
   } catch (e) {
     const err = parseApiError(e)

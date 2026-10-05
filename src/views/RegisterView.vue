@@ -44,7 +44,7 @@ async function submit() {
       ...(form.phone.trim() && { phone: form.phone.trim() }),
       ...(form.id_card_number.trim() && { id_card_number: form.id_card_number.trim() }),
     })
-    await router.push({ name: 'profile' })
+    await router.push({ name: 'dashboard' })
   } catch (e) {
     const err = parseApiError(e)
     message.value = err.message
