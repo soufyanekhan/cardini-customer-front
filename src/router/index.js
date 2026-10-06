@@ -27,13 +27,7 @@ const router = createRouter({
       path: '/groupes',
       name: 'groups',
       component: () => import('@/views/GroupsView.vue'),
-      meta: { requiresAuth: true, title: 'Mes groupes' },
-    },
-    {
-      path: '/groupes/:id',
-      name: 'group-detail',
-      component: () => import('@/views/GroupDetailView.vue'),
-      meta: { requiresAuth: true, title: 'Gérer le groupe' },
+      meta: { requiresAuth: true, title: 'Groupes' },
     },
     {
       path: '/profil',
