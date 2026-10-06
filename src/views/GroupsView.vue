@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
+import AddDependentModal from '@/components/AddDependentModal.vue'
 import DependentShopsModal from '@/components/DependentShopsModal.vue'
 import { api, parseApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
@@ -12,6 +13,9 @@ const loading = ref(true)
 const message = ref('')
 const search = ref('')
 const selected = ref(null)
+const groupShops = ref([]) // shops where he holds a group: where dependents can be added
+const showAdd = ref(false)
+const notice = ref('')
 
 const money = (n) =>
   new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
@@ -93,6 +97,9 @@ const modalError = ref('')
 
 async function load() {
   const { data } = await api.get('/customer/dashboard')
+  groupShops.value = data.shops
+    .filter((s) => s.type === 'group')
+    .map((s) => ({ group_id: s.id, shop_name: s.shop_name }))
   const me = buildMe(data)
   const dependents = buildDependents(data.shops)
   rows.value = me.shops.length ? [me, ...dependents] : dependents // he is always first
@@ -126,6 +133,16 @@ async function detach(shop) {
   }
 }
 
+async function onAdded(text) {
+  showAdd.value = false
+  notice.value = text
+  try {
+    await load()
+  } catch (e) {
+    message.value = parseApiError(e).message
+  }
+}
+
 function closeModal() {
   selected.value = null
   modalError.value = ''
@@ -148,6 +165,7 @@ onMounted(async () => {
     <p class="page__lead">Vous et vos personnes à charge : boutiques concernées et montants dus.</p>
 
     <p v-if="message" class="alert" role="alert">{{ message }}</p>
+    <p v-if="notice" class="alert alert--ok" role="status">{{ notice }}</p>
     <p v-if="loading" class="muted">Chargement…</p>
 
     <div v-else-if="!rows.length && !message" class="empty">
@@ -157,13 +175,24 @@ onMounted(async () => {
     <section v-else-if="!message" class="section section--first">
       <div class="section__bar">
         <h2 class="section-title">Personnes</h2>
-        <input
-          v-model="search"
-          class="search"
-          type="search"
-          placeholder="Rechercher par nom…"
-          aria-label="Rechercher une personne"
-        />
+        <div class="section__tools">
+          <input
+            v-model="search"
+            class="search"
+            type="search"
+            placeholder="Rechercher par nom…"
+            aria-label="Rechercher une personne"
+          />
+          <button
+            class="btn btn--primary btn--inline"
+            type="button"
+            :disabled="!groupShops.length"
+            :title="groupShops.length ? '' : 'Vous n\'êtes titulaire d\'aucun groupe'"
+            @click="showAdd = true"
+          >
+            + Ajouter une personne à charge
+          </button>
+        </div>
       </div>
 
       <div v-if="!filtered.length" class="empty">
@@ -203,6 +232,12 @@ onMounted(async () => {
     </section>
   </AppLayout>
 
+  <AddDependentModal
+    v-if="showAdd"
+    :shops="groupShops"
+    @close="showAdd = false"
+    @success="onAdded"
+  />
   <DependentShopsModal
     v-if="selected"
     :dependent="selected"
