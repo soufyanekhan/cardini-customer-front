@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import AddDependentModal from '@/components/AddDependentModal.vue'
+import AssignNinModal from '@/components/AssignNinModal.vue'
 import DependentShopsModal from '@/components/DependentShopsModal.vue'
 import { api, parseApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
@@ -15,6 +16,7 @@ const search = ref('')
 const selected = ref(null)
 const groupShops = ref([]) // shops where he holds a group: where dependents can be added
 const showAdd = ref(false)
+const assigning = ref(null) // unnamed dependent receiving a real NIN
 const notice = ref('')
 
 const money = (n) =>
@@ -68,6 +70,7 @@ function buildDependents(shops) {
           person_id: m.person_id,
           name: m.name,
           isMe: false,
+          isPlaceholder: m.is_placeholder,
           owed: 0,
           shops: [],
         })
@@ -135,6 +138,7 @@ async function detach(shop) {
 
 async function onAdded(text) {
   showAdd.value = false
+  assigning.value = null
   notice.value = text
   try {
     await load()
@@ -213,6 +217,12 @@ onMounted(async () => {
               <td>
                 {{ r.name }}
                 <span v-if="r.isMe" class="badge">Vous</span>
+                <template v-if="r.isPlaceholder">
+                  <span class="badge badge--warn">Sans NIN</span>
+                  <button class="link-btn link-btn--inline" type="button" @click="assigning = r">
+                    Associer un NIN
+                  </button>
+                </template>
               </td>
               <td>
                 <button v-if="r.shops.length" class="link-btn" type="button" @click="selected = r">
@@ -232,6 +242,12 @@ onMounted(async () => {
     </section>
   </AppLayout>
 
+  <AssignNinModal
+    v-if="assigning"
+    :person="assigning"
+    @close="assigning = null"
+    @success="onAdded"
+  />
   <AddDependentModal
     v-if="showAdd"
     :shops="groupShops"
