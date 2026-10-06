@@ -8,9 +8,23 @@ const auth = useAuthStore()
 
 const summary = ref(null)
 const shops = ref([])
+const memberships = ref([])
 const loading = ref(true)
 const message = ref('')
 const expanded = ref({})
+const tab = ref('mine') // 'mine' | 'dependent'
+const tabs = computed(() => [
+  { id: 'mine', label: 'Mes boutiques', count: shops.value.length },
+  { id: 'dependent', label: 'Je suis à charge', count: memberships.value.length },
+])
+
+function moveTab(event) {
+  const ids = tabs.value.map((t) => t.id)
+  const i = ids.indexOf(tab.value)
+  const next = event.key === 'ArrowRight' ? (i + 1) % ids.length : (i - 1 + ids.length) % ids.length
+  tab.value = ids[next]
+  document.getElementById(`tab-${ids[next]}`)?.focus()
+}
 
 const firstName = computed(() => (auth.person?.name ?? '').split(' ')[0])
 
@@ -31,6 +45,9 @@ onMounted(async () => {
     const { data } = await api.get('/customer/dashboard')
     summary.value = data.summary
     shops.value = data.shops
+    memberships.value = data.memberships ?? []
+    // Nothing as holder but dependent somewhere: open that tab directly.
+    if (!shops.value.length && memberships.value.length) tab.value = 'dependent'
   } catch (e) {
     message.value = parseApiError(e).message
   } finally {
@@ -63,13 +80,41 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section class="section">
-      <h2 class="section-title">Mes boutiques</h2>
+    <div
+      class="tabs"
+      role="tablist"
+      aria-label="Mes boutiques"
+      @keydown.right.prevent="moveTab"
+      @keydown.left.prevent="moveTab"
+    >
+      <button
+        v-for="t in tabs"
+        :id="`tab-${t.id}`"
+        :key="t.id"
+        class="tab"
+        type="button"
+        role="tab"
+        :aria-selected="tab === t.id"
+        :aria-controls="`panel-${t.id}`"
+        :tabindex="tab === t.id ? 0 : -1"
+        @click="tab = t.id"
+      >
+        {{ t.label }} <span class="tab__count">{{ t.count }}</span>
+      </button>
+    </div>
 
-      <p v-if="loading" class="muted">Chargement…</p>
+    <p v-if="loading" class="muted tabpanel">Chargement…</p>
 
-      <div v-else-if="!shops.length && !message" class="empty">
-        <p>Vous n'êtes rattaché à aucune boutique pour le moment.</p>
+    <!-- Tab 1: shops where he is the holder -->
+    <section
+      v-else-if="tab === 'mine'"
+      id="panel-mine"
+      class="tabpanel"
+      role="tabpanel"
+      aria-labelledby="tab-mine"
+    >
+      <div v-if="!shops.length && !message" class="empty">
+        <p>Vous n'êtes titulaire d'aucune boutique pour le moment.</p>
       </div>
 
       <ul v-else class="list">
@@ -89,9 +134,9 @@ onMounted(async () => {
               <p class="shop__owed" :class="{ 'shop__owed--zero': s.owed === 0 }">
                 {{ s.owed === 0 ? 'À jour' : money(s.owed) }}
               </p>
-              <span v-if="s.overdue_count > 0" class="badge badge--danger">
-                {{ s.overdue_count }} en retard
-              </span>
+              <span v-if="s.overdue_count > 0" class="badge badge--danger"
+                >{{ s.overdue_count }} en retard</span
+              >
               <button
                 class="btn btn--ghost btn--small"
                 type="button"
@@ -113,6 +158,37 @@ onMounted(async () => {
               <span :class="{ muted: m.owed === 0 }">{{ money(m.owed) }}</span>
             </li>
           </ul>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Tab 2: shops where he is a dependent of someone else's group -->
+    <section
+      v-else
+      id="panel-dependent"
+      class="tabpanel"
+      role="tabpanel"
+      aria-labelledby="tab-dependent"
+    >
+      <p class="muted section__note">
+        Vous faites partie du groupe d'un autre titulaire dans ces boutiques.
+      </p>
+
+      <div v-if="!memberships.length" class="empty">
+        <p>Vous n'êtes à charge d'aucun titulaire pour le moment.</p>
+      </div>
+
+      <ul v-else class="list">
+        <li v-for="g in memberships" :key="g.group_id" class="row">
+          <div>
+            <p class="row__title">{{ g.shop_name }}</p>
+            <p class="row__meta">
+              Titulaire : {{ g.holder_name }} · hors votre part et les personnes partagées
+            </p>
+          </div>
+          <p class="shop__owed" :class="{ 'shop__owed--zero': g.owed === 0 }">
+            {{ g.owed === 0 ? 'À jour' : money(g.owed) }}
+          </p>
         </li>
       </ul>
     </section>
