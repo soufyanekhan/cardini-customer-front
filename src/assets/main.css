@@ -391,3 +391,33 @@ a.btn--ghost, a.btn--ghost:hover { color: var(--ink); }
 .badge--warn { background: #fdf0d2; color: #7a5200; }
 .link-btn--inline { margin-left: 0.6rem; font-size: 0.875rem; }
 .picked-card--warn { background: #fdf6e3; border-color: #ecd9a0; }
+
+/* Overdue info, operations modal */
+.overdue-line { color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-top: 0.15rem; }
+.overdue-line .badge--danger { margin-left: 0.4rem; }
+.modal-footer--between { justify-content: space-between; }
+.modal-overlay--top { z-index: 60; }
+.modal-box--xl { max-width: 78rem; }
+.ops-toolbar { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--line); }
+.ops-toolbar .search { min-width: 0; flex: 1 1 10rem; }
+.ops-state { padding: 1.5rem 1.25rem; }
+
+.type-pill { display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; }
+.type-pill.purchase { background: #fdecea; color: var(--danger); }
+.type-pill.payment { background: var(--ok-bg); color: var(--ok); }
+.type-pill.cleared { background: #e3eaec; color: var(--ink); }
+.debit { color: var(--danger); font-weight: 600; }
+.credit { color: var(--ok); font-weight: 600; }
+.due { font-size: 0.8125rem; color: var(--muted); }
+.due--late { color: var(--danger); font-weight: 500; }
+
+.status-pill { display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; background: #e3eaec; }
+.status-pill.paid { background: var(--ok-bg); color: var(--ok); }
+.status-pill.overdue { background: var(--danger-bg); color: var(--danger); }
+.status-pill.partially_paid { background: #fdf0d2; color: #7a5200; }
+
+.pagination { display: flex; justify-content: center; gap: 0.3rem; padding: 0.9rem; border-top: 1px solid var(--line); }
+.pagination button { font: inherit; min-width: 2.2rem; padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); cursor: pointer; }
+.pagination button.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+.pagination button:disabled { opacity: 0.45; cursor: not-allowed; }
+.pagination .ellipsis { padding: 0.35rem 0.3rem; color: var(--muted); }

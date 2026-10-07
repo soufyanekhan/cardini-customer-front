@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
+import ShopDetailModal from '@/components/ShopDetailModal.vue'
 import { api, parseApiError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 
@@ -11,7 +12,7 @@ const shops = ref([])
 const memberships = ref([])
 const loading = ref(true)
 const message = ref('')
-const expanded = ref({})
+const detailShop = ref(null)
 const tab = ref('mine') // 'mine' | 'dependent'
 const tabs = computed(() => [
   { id: 'mine', label: 'Mes boutiques', count: shops.value.length },
@@ -35,10 +36,6 @@ const money = (n) =>
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR') : '—')
 const keyOf = (s) => `${s.type}-${s.id}`
 const dependentsCount = (s) => s.members.filter((m) => !m.is_holder).length
-
-function toggle(s) {
-  expanded.value[keyOf(s)] = !expanded.value[keyOf(s)]
-}
 
 onMounted(async () => {
   try {
@@ -124,8 +121,15 @@ onMounted(async () => {
               <p class="row__title">{{ s.shop_name }}</p>
               <p class="row__meta">
                 {{ dependentsCount(s) }} personne{{ dependentsCount(s) > 1 ? 's' : '' }} à charge
-                <template v-if="s.next_due_date">
+                <template v-if="s.next_due_date && !s.overdue_count">
                   · prochaine échéance {{ formatDate(s.next_due_date) }}</template
+                >
+              </p>
+              <p v-if="s.overdue_count > 0" class="overdue-line">
+                En retard depuis le {{ formatDate(s.overdue_since) }} ·
+                {{ s.max_days_overdue }} jour{{ s.max_days_overdue > 1 ? 's' : '' }}
+                <span class="badge badge--danger"
+                  >{{ s.overdue_count }} dette{{ s.overdue_count > 1 ? 's' : '' }}</span
                 >
               </p>
             </div>
@@ -134,30 +138,11 @@ onMounted(async () => {
               <p class="shop__owed" :class="{ 'shop__owed--zero': s.owed === 0 }">
                 {{ s.owed === 0 ? 'À jour' : money(s.owed) }}
               </p>
-              <span v-if="s.overdue_count > 0" class="badge badge--danger"
-                >{{ s.overdue_count }} en retard</span
-              >
-              <button
-                class="btn btn--ghost btn--small"
-                type="button"
-                :aria-expanded="!!expanded[keyOf(s)]"
-                @click="toggle(s)"
-              >
-                {{ expanded[keyOf(s)] ? 'Masquer' : 'Détails' }}
+              <button class="btn btn--ghost btn--small" type="button" @click="detailShop = s">
+                Détails
               </button>
             </div>
           </div>
-
-          <ul v-if="expanded[keyOf(s)]" class="shop__body">
-            <li v-for="m in s.members" :key="m.shop_customer_id" class="member">
-              <span>
-                {{ m.name }}
-                <span v-if="m.is_holder" class="badge">Titulaire</span>
-                <span v-else-if="m.role_in_group" class="row__meta"> · {{ m.role_in_group }}</span>
-              </span>
-              <span :class="{ muted: m.owed === 0 }">{{ money(m.owed) }}</span>
-            </li>
-          </ul>
         </li>
       </ul>
     </section>
@@ -193,4 +178,6 @@ onMounted(async () => {
       </ul>
     </section>
   </AppLayout>
+
+  <ShopDetailModal v-if="detailShop" :shop="detailShop" @close="detailShop = null" />
 </template>
